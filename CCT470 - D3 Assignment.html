@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Style -->
+<style>
+	.container {font-family: Arial; width: 50%;}
+	#footnotes {font-size: 12px;}
+</style>
+
+<!-- Create a div where the graph will take place -->
+<div class="container">
+<div id="my_dataviz">
+	<h2>Most Popular Board Games of 2019 by Number of Players</h2>
+</div>
+<div>
+	<p>This data features the top 5 played games and their ratings for 7 different game publishers. This data was compiled by BoardGameGeek.com (BGG) in order to find the most popular games among BGG users. The data uses the numbers of unique BGG users who logged plays of these games during the whole 2019 year at least once.</p>
+	<p><i>To interact with the visualization, hover your cursor over the various dots to see information on the game's publisher, year, and rating.</i></p>
+	</div>
+	<div id="footnotes">
+		<p>Source: <a href="https://boardgamegeek.com/blogpost/100267/bgg-top-2019-publishers">BGG Top 2019 Publishers</a></p>
+		<p>Note: The number of times that the user has played the game is not considered in the data. Each user is only counted once for every played game title.</p>
+	</div>
+</div>
+<script>
+
+// set the dimensions and margins of the graph
+var margin = {top: 10, right: 30, bottom: 40, left: 135},
+    width = 600 - margin.left - margin.right,
+    height = 800 - margin.top - margin.bottom;
+
+// append the svg object to the body of the page
+var svg = d3.select("#my_dataviz")
+  .append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform",
+          "translate(" + margin.left + "," + margin.top + ")");
+
+// Parse the Data
+d3.csv("https://raw.githubusercontent.com/sxdney/d3.js-uoft/main/top-5-played-games-and-ratings.csv", function(data) {
+
+// sort data
+data.sort(function(b, a) {
+  return a["Number of Players"] - b["Number of Players"];
+});
+
+// create a tooltip
+var tooltip = d3.select("#my_dataviz")
+	.append("div")
+	.style("position","absolute")
+	.style("opacity", 0)
+	.style("background-color", "white")
+	.style("border", "solid")
+	.style("border-width", "2px")
+	.style("border-radius", "5px")
+	.style("padding", "5px")
+
+// Three function that change the tooltip when user hover / move / leave a cell
+  var mouseover = function(d) {
+    tooltip
+      .html("Publisher: " + d["Publisher"] + "</br>" + "Year Published: " + d["Year Published"] + "</br>" + "Rating: " + d["Rating"])
+      .style("opacity", 1)
+    d3.select(this)
+      .style("stroke", "black")
+      .style("opacity", 1)
+  }
+  var mousemove = function(d) {
+    tooltip
+      .style("left", (d3.mouse(this)[0]+130) + "px")
+      .style("top", (d3.mouse(this)[1]) + "px")
+  }
+  var mouseleave = function(d) {
+    tooltip
+      .style("opacity", 0)
+    d3.selectAll(".mycircle")
+      .style("opacity",1)
+  }
+
+// Add X axis
+var x = d3.scaleLinear()
+  .domain([0, 20000])
+  .range([ 0, width]);
+svg.append("g")
+  .attr("transform", "translate(0," + height + ")")
+  .call(d3.axisBottom(x))
+  .selectAll("text")
+    .attr("transform", "translate(-10,0)rotate(-45)")
+    .style("text-anchor", "end");
+
+// Y axis
+var y = d3.scaleBand()
+  .range([ 0, height ])
+  .domain(data.map(function(d) { return d["Board Game"]; }))
+  .padding(1);
+svg.append("g")
+  .call(d3.axisLeft(y))
+
+// Lines
+svg.selectAll("myline")
+  .data(data)
+  .enter()
+  .append("line")
+    .attr("x1", function(d) { return x(d["Number of Players"]); })
+    .attr("x2", x(0))
+    .attr("y1", function(d) { return y(d["Board Game"]); })
+    .attr("y2", function(d) { return y(d["Board Game"]); })
+    .attr("stroke", "grey")
+
+// Circles
+svg.selectAll("mycircle")
+  .data(data)
+  .enter()
+  .append("circle")
+    .attr("cx", function(d) { return x(d["Number of Players"]); })
+    .attr("cy", function(d) { return y(d["Board Game"]); })
+    .attr("r", "7")
+    .style("fill", "#69b3a2")
+    .attr("stroke", "black")
+    .on("mouseover", mouseover)
+    .on("mousemove", mousemove)
+    .on("mouseleave", mouseleave)
+
+})
+
+</script>
